@@ -4,7 +4,6 @@ import com.amb.xlink.iso8583.bean.Transaction;
 import com.amb.xlink.iso8583.mediator.XLinkAccountInfoWrapper;
 import com.amb.xlink.iso8583.mediator.XLinkISO8583Util;
 import com.amb.xlink.iso8583.mediator.XLinkSessionWrapper;
-import com.sun.org.apache.xalan.internal.xsltc.runtime.Hashtable;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;

@@ -1,6 +1,5 @@
 package com.amb.xlink.iso8583.mediator;
 
-import com.amb.xlink.iso8583.mediator.XLinkISO8583Constant;
 import org.jpos.iso.*;
 import org.jpos.iso.channel.ASCIIChannel;
 import org.jpos.iso.packager.GenericPackager;
