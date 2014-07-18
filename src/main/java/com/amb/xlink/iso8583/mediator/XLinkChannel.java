@@ -240,11 +240,6 @@ public class XLinkChannel extends PostChannel implements Runnable {
 						}
 						if (retryCount == XLinkISO8583Constant.ECHO_TEST_RETRY_COUNT) {
 							channel.disconnect();
-							if (!channel.getExpiredListRef()
-									.contains(msisdnKey)) {
-								channel.getExpiredListRef().add(msisdnKey);
-
-							}
 							System.out
 									.println("### Last Tx exceeds 180seconds and echo failed closing session");
 							this.cancel();
