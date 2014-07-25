@@ -1,8 +1,12 @@
 package com.amb.xlink.iso8583.bean;
 
+import org.jpos.iso.ISOException;
+import org.jpos.iso.ISOUtil;
+
 public class ReversalBean {
 	private String field7;
 	private String field11;
+	private String field32;
 	private String field37;
 	private String userData;
 	private String amount;
@@ -10,9 +14,10 @@ public class ReversalBean {
 	private String destinationCode;
 	private String operationType;
 	
-	public ReversalBean(String field7, String field11,String field37, String userData, String amount, String destination, String destinationCode, String operationType) {
+	public ReversalBean(String field7, String field11,String field32,String field37, String userData, String amount, String destination, String destinationCode, String operationType) {
 		this.field7=field7;
 		this.field11=field11;
+		this.field32=field32;
 		this.field37=field37;
 		this.userData=userData;
 		this.amount=amount;
@@ -65,8 +70,13 @@ public class ReversalBean {
 	}
 	
 	public String getReversalKey(){
-		return "0200" + field11 + field7
-				+ field37;
+		try {
+			return "0200" + field11 + field7
+					+ ISOUtil.padleft(field37, 16, '0');
+		} catch (ISOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public String getOperationType() {
@@ -75,6 +85,14 @@ public class ReversalBean {
 
 	public void setOperationType(String operationType) {
 		this.operationType = operationType;
+	}
+
+	public String getField32() {
+		return field32;
+	}
+
+	public void setField32(String field32) {
+		this.field32 = field32;
 	}
 
 }

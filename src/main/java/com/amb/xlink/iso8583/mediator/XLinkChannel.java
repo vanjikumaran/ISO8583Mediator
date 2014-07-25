@@ -1,15 +1,24 @@
 package com.amb.xlink.iso8583.mediator;
 
-import com.amb.xlink.iso8583.jpos.util.NetworkMgtUtil;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 import org.jpos.iso.ISOPackager;
+import org.jpos.iso.channel.ASCIIChannel;
 import org.jpos.iso.channel.PostChannel;
 
-import java.io.IOException;
-import java.util.*;
+import com.amb.xlink.iso8583.jpos.util.NetworkMgtUtil;
 
 public class XLinkChannel extends PostChannel implements Runnable {
 
@@ -48,10 +57,13 @@ public class XLinkChannel extends PostChannel implements Runnable {
 	@Override
 	public void disconnect() throws IOException {
 		super.disconnect();
+        log.info("Disconnectig Channel");
+
         //Timer should end when the X-link channel disconnect and disposed
         statusTimer.cancel();
 		stopped = true;
 		if(!expiredListRef.contains(msisdnKey)){
+            log.info("Adding to expired Session List "+msisdnKey);
 			expiredListRef.add(msisdnKey);
 		}
 	}
@@ -83,7 +95,7 @@ public class XLinkChannel extends PostChannel implements Runnable {
 					this.disconnect();
 					//expiredListRef.add(msisdnKey);
 					e.printStackTrace();
-					System.out.println("Disconnecting IO Error!!!! @@@");
+					log.error("Disconnecting IO Error!!!! @@@");
 				} catch (IOException e1) {
 					log.error("Error while terminating XLink channel", e);
 					expiredListRef.add(msisdnKey);
@@ -103,6 +115,7 @@ public class XLinkChannel extends PostChannel implements Runnable {
 			}
 
 		}
+        log.info("Channel Stopped");
 
 	}
 
@@ -156,19 +169,25 @@ public class XLinkChannel extends PostChannel implements Runnable {
 
 	@Override
 	public ISOMsg receive() throws IOException, ISOException {
+		//Is this the culprit
+		log.info("Trying to Aquire the Channel lock");
 		synchronized (this) {
-			while (!responseReceived) {
+			log.info("Channel lock aquired");
+            log.info("Channel waiting for response for 60000 ms");
+            log.info("Has responseReceived: "+responseReceived);
+            //Why a while not If?
+//			while (!responseReceived && !hasTimeedOut) {
 				try {
-					if(isFinMsg){
+						log.info("Wait Start Time: "+System.currentTimeMillis());
 						wait(60000);
-					}else{
-						//SIGN ON/OFF, ECHO TEST ALSO Should terminate in 60 seconds to avoid  ESB thread block
-						wait(60000);
-					}
+						log.info("Wait End Time: "+System.currentTimeMillis());
 				} catch (InterruptedException ignore) {
+					log.info("Receive Wait INterrupted");
 				}
-			}
+//			}
+            log.info("Channel waiting finished for response");
 		}
+		log.info("Channel lock released");
 		return response;
 	}
 
@@ -226,7 +245,7 @@ public class XLinkChannel extends PostChannel implements Runnable {
 						ISOMsg response = null;
 						while (retryCount < XLinkISO8583Constant.ECHO_TEST_RETRY_COUNT) {
 							try {
-								System.out.println("echo test performing for msisdn " +msisdnKey);
+								log.warn("echo test performing for msisdn " +msisdnKey);
 								channel.send(request);
 								response = channel.receive();
 								
@@ -240,8 +259,12 @@ public class XLinkChannel extends PostChannel implements Runnable {
 						}
 						if (retryCount == XLinkISO8583Constant.ECHO_TEST_RETRY_COUNT) {
 							channel.disconnect();
-							System.out
-									.println("### Last Tx exceeds 180seconds and echo failed closing session");
+							if (!channel.getExpiredListRef()
+									.contains(msisdnKey)) {
+								channel.getExpiredListRef().add(msisdnKey);
+
+							}
+							log.info("### Last Tx exceeds 180seconds and echo failed closing session");
 							this.cancel();
 						}
 

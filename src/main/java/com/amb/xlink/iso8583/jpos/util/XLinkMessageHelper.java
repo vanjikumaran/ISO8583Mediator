@@ -1,26 +1,31 @@
 package com.amb.xlink.iso8583.jpos.util;
 
-import com.amb.xlink.iso8583.bean.Transaction;
-import com.amb.xlink.iso8583.mediator.XLinkAccountInfoWrapper;
-import com.amb.xlink.iso8583.mediator.XLinkISO8583Util;
-import com.amb.xlink.iso8583.mediator.XLinkSessionWrapper;
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMFactory;
-import org.apache.axis2.context.MessageContext;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.jpos.iso.ISOException;
-import org.jpos.iso.ISOMsg;
-import org.jpos.iso.ISOUtil;
-
-import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import javax.xml.namespace.QName;
+
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axis2.context.MessageContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.jpos.iso.ISOException;
+import org.jpos.iso.ISOMsg;
+import org.jpos.iso.ISOUtil;
+
+import com.amb.xlink.iso8583.bean.Transaction;
+import com.amb.xlink.iso8583.mediator.XLinkAccountInfoWrapper;
+import com.amb.xlink.iso8583.mediator.XLinkISO8583Mediator;
+import com.amb.xlink.iso8583.mediator.XLinkISO8583Util;
+import com.amb.xlink.iso8583.mediator.XLinkSessionWrapper;
+import com.sun.org.apache.xalan.internal.xsltc.runtime.Hashtable;
 
 public class XLinkMessageHelper {
 
@@ -136,7 +141,7 @@ public class XLinkMessageHelper {
 		msgCtx.setProperty("processingCode", processingCode);
 		
 		//Failure case
-		if(statusCode != null && !statusCode.equals("00")){
+		if(statusCode != null && !"00".equals(statusCode) && !"68".equals(statusCode)){
 			
 			//This code is setting the response to the customer. Before doing this, it needs to generate the proper reversal.
 			switch (processingCode.substring(0, 2)) {
@@ -286,7 +291,6 @@ public class XLinkMessageHelper {
 			 return apiResponse;
 		}
 //		END OF FAILURE
-
 		
 //		SUCCESS CASE
 		if(processingCode == null){

@@ -1,17 +1,19 @@
 package com.amb.xlink.iso8583.jpos.util;
 
-import com.amb.xlink.iso8583.mediator.XLinkAccountInfoWrapper;
-import com.amb.xlink.iso8583.mediator.XLinkISO8583Constant;
-import com.amb.xlink.iso8583.mediator.XLinkSessionWrapper;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+import javax.xml.namespace.QName;
+
 import org.apache.axiom.om.OMElement;
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 import org.jpos.iso.ISOUtil;
 
-import javax.xml.namespace.QName;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
+import com.amb.xlink.iso8583.mediator.XLinkAccountInfoWrapper;
+import com.amb.xlink.iso8583.mediator.XLinkISO8583Constant;
+import com.amb.xlink.iso8583.mediator.XLinkSessionWrapper;
 
 public class PaymentUtils {
 	
@@ -190,18 +192,28 @@ public class PaymentUtils {
 		// MBSB Spec is here
 		request.setMTI("0200");
 		
+		String sourceAcctType="10"; //Assign the Default Account
+		OMElement sourceAcctTypeNode = requestOM.getFirstChildWithName(new QName("SourceAcctType"));
+		if(sourceAcctTypeNode !=null && !"".equals(sourceAcctTypeNode.getText())){
+			sourceAcctType=sourceAcctTypeNode.getText();
+		}
+		
 		String destAcctType="00"; //Assign the Default Account
 		OMElement destAcctTypeNode = requestOM.getFirstChildWithName(new QName("DestAcctType"));
-		if(destAcctTypeNode !=null){
+		if(destAcctTypeNode !=null && !"".equals(destAcctTypeNode.getText())){
 			destAcctType=destAcctTypeNode.getText();
 		}
-		request.set(3, "4910"+destAcctType);
+		request.set(3, "49"+sourceAcctType+destAcctType);
 		
 		OMElement amountNode = requestOM.getFirstChildWithName(new QName("Amount"));
 		String amount= "0";
 		if(amountNode!=null){
 			amount=amountNode.getText();
 		}
+		
+//		if(amount.contains(".")){
+//			amount=amount.replace(".", "");
+//		}
 		
 		request.set(4, ISOUtil.padleft(amount, 18, '0'));
 		SimpleDateFormat dateFormat = new SimpleDateFormat("MMddHHmmss");
@@ -307,30 +319,34 @@ public class PaymentUtils {
 		if(amountNode!=null){
 			amount=amountNode.getText();
 		}
+		
+//		if(amount.contains(".")){
+//			amount=amount.replace(".", "");
+//		}
 		//Testing
 		if(amount == null){
 			amount="0";
 		}
 		
+		String field7=reversalKey.substring(17,27);
+		String field37=reversalKey.substring(31);
+		
 		request.set(4, ISOUtil.padleft(amount, 12, '0'));
-		SimpleDateFormat dateFormat = new SimpleDateFormat("MMddHHmmss");
-		dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-		request.set(7, dateFormat.format(new Date()));
+		request.set(7, field7);
 		request.set(11, field11);
 		request.set(18, XLinkISO8583Constant.REQUEST_FIELD_18); // >> For MBSB it needs to be 6017
 		request.set(32, XLinkISO8583Constant.REQUEST_FIELD_32);
-		request.set(37, new SimpleDateFormat("MMdd").format(new Date())+"00"+field11.substring(6)); //TrxId 12345678
+		request.set(37, field37); //TrxId 12345678
 		String source=accountInfoWrapper.getAccountno();
 		request.set(41, ISOMsgUtils.generateField41(source)); //Needd to know
 		
-		if(reversalKey!=null){
-		request.set(90, reversalKey);
-		}else{
+		if(reversalKey==null){
 			OMElement revKeyNode = requestOM.getFirstChildWithName(new QName("RevKey"));
 			if(revKeyNode!=null){
 				reversalKey=revKeyNode.getText();
 			}
 		}
+		request.set(90, reversalKey);
 		
 		String destination=null;
 		OMElement toNode = requestOM.getFirstChildWithName(new QName("To"));

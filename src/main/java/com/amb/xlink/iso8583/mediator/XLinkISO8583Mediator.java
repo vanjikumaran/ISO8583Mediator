@@ -1,7 +1,7 @@
 package com.amb.xlink.iso8583.mediator;
 
-import com.amb.xlink.iso8583.bean.ReversalBean;
-import com.amb.xlink.iso8583.jpos.util.XLinkMessageHelper;
+import javax.xml.namespace.QName;
+
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
@@ -15,7 +15,8 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 
-import javax.xml.namespace.QName;
+import com.amb.xlink.iso8583.bean.ReversalBean;
+import com.amb.xlink.iso8583.jpos.util.XLinkMessageHelper;
 
 public class XLinkISO8583Mediator extends AbstractMediator implements ManagedLifecycle{
 	
@@ -36,6 +37,7 @@ public class XLinkISO8583Mediator extends AbstractMediator implements ManagedLif
 		try {
 			String mobileConnectionKey = (String) synCtx
 					.getProperty(XLinkISO8583Constant.MOBILE_CONNECTION_KEY);
+            log.info("Mediator : MSISDN "+mobileConnectionKey);
 			XLinkConnnector connnector = XLinkConnnector.getInstance();
 			connnector.setMontorTriggerDuration(monitorTrigger);
 			connnector.setXLinkOnErrorRetryCount(xlinkRetryCount);
@@ -44,11 +46,12 @@ public class XLinkISO8583Mediator extends AbstractMediator implements ManagedLif
 			log.info("Initializing the X-Link mediator");
 			XLinkSessionWrapper xLinkSessionWrapper = connnector.getSession(
 					mobileConnectionKey, host, port,transactionHandler);
-			
+            log.info("Connector gotSession");
 			if (xLinkSessionWrapper != null && xLinkSessionWrapper.isSignOn()) {
 				// if sign on means upto now
 				// all session validation
 				// done successfully
+                log.info("Connector gotSession Success");
 				String accountno = (String) synCtx.getProperty("accountno");
 				String dob =(String) synCtx.getProperty("userDOB");
 				XLinkAccountInfoWrapper accountInfoWrapper = new XLinkAccountInfoWrapper(accountno, dob);
@@ -64,123 +67,141 @@ public class XLinkISO8583Mediator extends AbstractMediator implements ManagedLif
 							log.info("Decoding Status Code");
 							if (statusCode != null) {
 								log.info("Decoded Status Code: "+statusCode.getText());
-								String statusCodeValue = statusCode.getText();
-								//TODO: FIX PROPERLY
-								if (!"000000".equals(statusCodeValue)) {
-									//Set conditions for reversal
-									log.info("Starting Reversal builing");
-									OMElement requestElement = msgCtx.getEnvelope().getBody().getFirstElement(); //.detach();
-									log.info("First Child: "+requestElement.getLocalName());
-									
-									//REmove API Response and add APIRequest Element
-									OMFactory fac = OMAbstractFactory.getOMFactory();
-									OMElement apiRequest = fac.createOMElement(new QName("APIRequest"));
-									
-									OMElement operationType = fac.createOMElement(new  QName("OperationType"));
-									operationType.setText("51");
-									apiRequest.addChild(operationType);
-									
-									OMElement revOperationType = fac.createOMElement(new  QName("RevOperationType"));
-									revOperationType.setText(reversalBean.getOperationType());
-									apiRequest.addChild(revOperationType);
-									
-									OMElement revStatusCode = fac.createOMElement(new  QName("RevStatusCode"));
-									revStatusCode.setText(statusCodeValue);
-									msgCtx.setProperty("RevStatusCode", statusCodeValue);
-									apiRequest.addChild(revStatusCode);
-									
-									if(reversalBean.getAmount() != null){
-									OMElement amountNode = fac.createOMElement(new  QName("Amount"));
-									amountNode.setText(reversalBean.getAmount());
-									apiRequest.addChild(amountNode);
-									}
-									
-									if(reversalBean.getDestination() != null){
-										OMElement toNode = fac.createOMElement(new  QName("To"));
-										toNode.setText(reversalBean.getDestination());
-										apiRequest.addChild(toNode);
-										}
-									
-									if(reversalBean.getDestinationCode() != null){
-										OMElement destCodeNode = fac.createOMElement(new  QName("DIIC"));
-										destCodeNode.setText(reversalBean.getDestinationCode());
-										apiRequest.addChild(destCodeNode);
-										}
-									
-									if(reversalBean.getDestinationCode() != null){
-										OMElement revKeyNode = fac.createOMElement(new  QName("RevKey"));
-										revKeyNode.setText(reversalBean.getReversalKey());
-										apiRequest.addChild(revKeyNode);
-										}
-									
-									
-									requestElement.detach();
-									msgCtx.getEnvelope().getBody().addChild(apiRequest);
-									
-									log.info("New Request is built");
-									
-									log.info("Setting the ReversalKey msgctx property:"+reversalBean.getReversalKey());
-									msgCtx.setProperty("reversalKey", reversalBean.getReversalKey());
-									//Stage set
-									log.info("Setting up reversal case");
-									request = XLinkMessageHelper.createFinacialMessage(msgCtx,synCtx, accountInfoWrapper,xLinkSessionWrapper);
-//									reversalBean = generateReversalKey(request, msgCtx);//DO we need REVERSAL for REVERSAL?
-									responseElement = transactionHandler.handleFinancialMessage(request,xLinkSessionWrapper,msgCtx, synCtx);
-								}else{
-									//Successful message
-//									break;
-								}
+//								String statusCodeValue = statusCode.getText();
+//								//TODO: FIX PROPERLY
+//								if (!"000000".equals(statusCodeValue) && !"000068".equals(statusCodeValue)) {
+//									//Set conditions for reversal
+//									log.info("Starting Reversal builing");
+//									OMElement requestElement = msgCtx.getEnvelope().getBody().getFirstElement(); //.detach();
+//									log.info("First Child: "+requestElement.getLocalName());
+//									
+//									//REmove API Response and add APIRequest Element
+//									OMFactory fac = OMAbstractFactory.getOMFactory();
+//									OMElement apiRequest = fac.createOMElement(new QName("APIRequest"));
+//									
+//									OMElement operationType = fac.createOMElement(new  QName("OperationType"));
+//									operationType.setText("51");
+//									apiRequest.addChild(operationType);
+//									
+//									OMElement revOperationType = fac.createOMElement(new  QName("RevOperationType"));
+//									revOperationType.setText(reversalBean.getOperationType());
+//									apiRequest.addChild(revOperationType);
+//									
+//									OMElement revStatusCode = fac.createOMElement(new  QName("RevStatusCode"));
+//									revStatusCode.setText(statusCodeValue);
+//									msgCtx.setProperty("RevStatusCode", statusCodeValue);
+//									apiRequest.addChild(revStatusCode);
+//									
+//									OMElement revField32 = fac.createOMElement(new  QName("RevField32"));
+//									revField32.setText(reversalBean.getField32());
+//									msgCtx.setProperty("RevField32", revField32);
+//									apiRequest.addChild(revField32);
+//									
+//									if(reversalBean.getAmount() != null){
+//									OMElement amountNode = fac.createOMElement(new  QName("Amount"));
+//									amountNode.setText(reversalBean.getAmount());
+//									apiRequest.addChild(amountNode);
+//									}
+//									
+//									if(reversalBean.getDestination() != null){
+//										OMElement toNode = fac.createOMElement(new  QName("To"));
+//										toNode.setText(reversalBean.getDestination());
+//										apiRequest.addChild(toNode);
+//										}
+//									
+//									if(reversalBean.getDestinationCode() != null){
+//										OMElement destCodeNode = fac.createOMElement(new  QName("DIIC"));
+//										destCodeNode.setText(reversalBean.getDestinationCode());
+//										apiRequest.addChild(destCodeNode);
+//										}
+//									
+//									if(reversalBean.getDestinationCode() != null){
+//										OMElement revKeyNode = fac.createOMElement(new  QName("RevKey"));
+//										revKeyNode.setText(reversalBean.getReversalKey());
+//										apiRequest.addChild(revKeyNode);
+//										}
+//									
+//									
+//									requestElement.detach();
+//									msgCtx.getEnvelope().getBody().addChild(apiRequest);
+//									
+//									log.info("New Request is built");
+//									
+//									log.info("Setting the ReversalKey msgctx property:"+reversalBean.getReversalKey());
+//									msgCtx.setProperty("reversalKey", reversalBean.getReversalKey());
+//									//Stage set
+//									log.info("Setting up reversal case");
+//									request = XLinkMessageHelper.createFinacialMessage(msgCtx,synCtx, accountInfoWrapper,xLinkSessionWrapper);
+////									reversalBean = generateReversalKey(request, msgCtx);//DO we need REVERSAL for REVERSAL?
+//									responseElement = transactionHandler.handleFinancialMessage(request,xLinkSessionWrapper,msgCtx, synCtx);
+//								}else{
+//									//Successful message
+////									break;
+//								}
 							}
 					} else {
-						//TODO: DO a reversal from Bean and then send the error response to client
-						OMFactory fac = OMAbstractFactory.getOMFactory();
-						OMElement apiRequest = fac.createOMElement(new QName("APIRequest"));
+//						TODO: STILL NOT SENDING THE REVERSAL
 						
-						OMElement operationType = fac.createOMElement(new  QName("OperationType"));
-						operationType.setText("51");
-						apiRequest.addChild(operationType);
-						
-						OMElement revOperationType = fac.createOMElement(new  QName("RevOperationType"));
-						revOperationType.setText(reversalBean.getOperationType());
-						apiRequest.addChild(revOperationType);
-						
-						if(reversalBean.getAmount() != null){
-						OMElement amountNode = fac.createOMElement(new  QName("Amount"));
-						amountNode.setText(reversalBean.getAmount());
-						apiRequest.addChild(amountNode);
-						}
-						
-						if(reversalBean.getDestination() != null){
-							OMElement toNode = fac.createOMElement(new  QName("To"));
-							toNode.setText(reversalBean.getDestination());
-							apiRequest.addChild(toNode);
-							}
-						
-						if(reversalBean.getDestinationCode() != null){
-							OMElement destCodeNode = fac.createOMElement(new  QName("DIIC"));
-							destCodeNode.setText(reversalBean.getDestinationCode());
-							apiRequest.addChild(destCodeNode);
-							}
-						
-						if(reversalBean.getDestinationCode() != null){
-							OMElement revKeyNode = fac.createOMElement(new  QName("RevKey"));
-							revKeyNode.setText(reversalBean.getReversalKey());
-							apiRequest.addChild(revKeyNode);
-							}
-						
-						
-						msgCtx.getEnvelope().getBody().addChild(apiRequest);
-						
-						log.info("New Request is built");
-						
-						log.info("Setting the ReversalKey msgctx property:"+reversalBean.getReversalKey());
-						msgCtx.setProperty("reversalKey", reversalBean.getReversalKey());
-						//Stage set
-						log.info("Setting up reversal case");
-						request = XLinkMessageHelper.createFinacialMessage(msgCtx,synCtx, accountInfoWrapper,xLinkSessionWrapper);
-//						reversalBean = generateReversalKey(request, msgCtx);//DO we need REVERSAL for REVERSAL?
-						responseElement = transactionHandler.handleFinancialMessage(request,xLinkSessionWrapper,msgCtx, synCtx);
-//					}
+//						//TODO: DO a reversal from Bean and then send the error response to client
+//						OMFactory fac = OMAbstractFactory.getOMFactory();
+//						OMElement apiRequest = fac.createOMElement(new QName("APIRequest"));
+//						
+//						OMElement operationType = fac.createOMElement(new  QName("OperationType"));
+//						operationType.setText("51");
+//						apiRequest.addChild(operationType);
+//						
+//						OMElement revOperationType = fac.createOMElement(new  QName("RevOperationType"));
+//						revOperationType.setText(reversalBean.getOperationType());
+//						apiRequest.addChild(revOperationType);
+//						
+//						String statusCodeValue="96";
+//						OMElement revStatusCode = fac.createOMElement(new  QName("RevStatusCode"));
+//						revStatusCode.setText(statusCodeValue);
+//						msgCtx.setProperty("RevStatusCode", statusCodeValue);
+//						apiRequest.addChild(revStatusCode);
+//						
+//						OMElement revField32 = fac.createOMElement(new  QName("RevField32"));
+//						revField32.setText(reversalBean.getField32());
+//						msgCtx.setProperty("RevField32", revField32);
+//						apiRequest.addChild(revField32);
+//						
+//						if(reversalBean.getAmount() != null){
+//						OMElement amountNode = fac.createOMElement(new  QName("Amount"));
+//						amountNode.setText(reversalBean.getAmount());
+//						apiRequest.addChild(amountNode);
+//						}
+//						
+//						if(reversalBean.getDestination() != null){
+//							OMElement toNode = fac.createOMElement(new  QName("To"));
+//							toNode.setText(reversalBean.getDestination());
+//							apiRequest.addChild(toNode);
+//							}
+//						
+//						if(reversalBean.getDestinationCode() != null){
+//							OMElement destCodeNode = fac.createOMElement(new  QName("DIIC"));
+//							destCodeNode.setText(reversalBean.getDestinationCode());
+//							apiRequest.addChild(destCodeNode);
+//							}
+//						
+//						if(reversalBean.getDestinationCode() != null){
+//							OMElement revKeyNode = fac.createOMElement(new  QName("RevKey"));
+//							revKeyNode.setText(reversalBean.getReversalKey());
+//							apiRequest.addChild(revKeyNode);
+//							}
+//						
+//						
+//						msgCtx.getEnvelope().getBody().addChild(apiRequest);
+//						
+//						log.info("New Request is built");
+//						
+//						log.info("Setting the ReversalKey msgctx property:"+reversalBean.getReversalKey());
+//						msgCtx.setProperty("reversalKey", reversalBean.getReversalKey());
+//						//Stage set
+//						log.info("Setting up reversal case");
+//						request = XLinkMessageHelper.createFinacialMessage(msgCtx,synCtx, accountInfoWrapper,xLinkSessionWrapper);
+////						reversalBean = generateReversalKey(request, msgCtx);//DO we need REVERSAL for REVERSAL?
+//						responseElement = transactionHandler.handleFinancialMessage(request,xLinkSessionWrapper,msgCtx, synCtx);
+////					}
 				}
 				
 			}else{
@@ -232,7 +253,7 @@ public class XLinkISO8583Mediator extends AbstractMediator implements ManagedLif
 				destinationCode=destinationCodeNode.getText();
 				log.info("Reversal: DIIC"+destinationCode);
 			}
-			return new ReversalBean((String)m.getValue(7),(String) m.getValue(11), (String)m.getValue(37), userData, amount, destination, destinationCode, operationType);
+			return new ReversalBean((String)m.getValue(7),(String) m.getValue(11),(String)m.getValue(32), (String)m.getValue(37), userData, amount, destination, destinationCode, operationType);
 		} catch (ISOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -1,14 +1,15 @@
 package com.amb.xlink.iso8583.jpos.util;
 
-import com.amb.xlink.iso8583.mediator.XLinkISO8583Constant;
-import org.jpos.iso.ISOException;
-import org.jpos.iso.ISOMsg;
-import org.jpos.iso.ISOUtil;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
 import java.util.TimeZone;
+
+import org.jpos.iso.ISOException;
+import org.jpos.iso.ISOMsg;
+import org.jpos.iso.ISOUtil;
+
+import com.amb.xlink.iso8583.mediator.XLinkISO8583Constant;
 
 public class NetworkMgtUtil {
 	

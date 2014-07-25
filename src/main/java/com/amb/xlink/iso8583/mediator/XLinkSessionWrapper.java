@@ -1,13 +1,13 @@
 package com.amb.xlink.iso8583.mediator;
 
+import java.io.IOException;
+import java.util.Observable;
+import java.util.Observer;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
-
-import java.io.IOException;
-import java.util.Observable;
-import java.util.Observer;
 
 public class XLinkSessionWrapper implements Observer {
 

@@ -1,18 +1,20 @@
 package com.amb.xlink.iso8583.jpos.util;
 
-import com.amb.xlink.iso8583.mediator.XLinkAccountInfoWrapper;
-import com.amb.xlink.iso8583.mediator.XLinkISO8583Constant;
-import com.amb.xlink.iso8583.mediator.XLinkSessionWrapper;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+import javax.xml.namespace.QName;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.MessageContext;
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 import org.jpos.iso.ISOUtil;
 
-import javax.xml.namespace.QName;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
+import com.amb.xlink.iso8583.mediator.XLinkAccountInfoWrapper;
+import com.amb.xlink.iso8583.mediator.XLinkISO8583Constant;
+import com.amb.xlink.iso8583.mediator.XLinkSessionWrapper;
 
 
 public class InquiryUtils {
@@ -54,13 +56,30 @@ public class InquiryUtils {
 		
 		// MBSB Spec is here
 		request.setMTI("0200");
-		request.set(3, "371000"); 
+		
+		String sourceAcctType="10"; //Assign the Default Account
+		OMElement sourceAcctTypeNode = requestOM.getFirstChildWithName(new QName("SourceAcctType"));
+		if(sourceAcctTypeNode !=null && !"".equals(sourceAcctTypeNode.getText())){
+			sourceAcctType=sourceAcctTypeNode.getText();
+		}
+		
+		String destAcctType="00"; //Assign the Default Account
+		OMElement destAcctTypeNode = requestOM.getFirstChildWithName(new QName("DestAcctType"));
+		if(destAcctTypeNode !=null && !"".equals(destAcctTypeNode.getText())){
+			destAcctType=destAcctTypeNode.getText();
+		}
+		
+		request.set(3, "37"+sourceAcctType+destAcctType); 
 		
 		String amount="0";
 		OMElement amountNode = requestOM.getFirstChildWithName(new QName("Amount"));
 		if(amountNode !=null){
 			amount = amountNode.getText();
 		}
+		
+//		if(amount.contains(".")){
+//			amount=amount.replace(".", "");
+//		}
 		
 		request.set(4, ISOUtil.padleft(amount, 18, '0'));
 		SimpleDateFormat dateFormat = new SimpleDateFormat("MMddHHmmss");

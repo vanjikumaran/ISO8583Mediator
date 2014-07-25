@@ -1,11 +1,12 @@
 package com.amb.xlink.iso8583.jpos.util;
 
-import com.amb.xlink.iso8583.mediator.XLinkISO8583Constant;
+import java.io.UnsupportedEncodingException;
+
 import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOMsg;
 import org.jpos.iso.ISOUtil;
 
-import java.io.UnsupportedEncodingException;
+import com.amb.xlink.iso8583.mediator.XLinkISO8583Constant;
 
 public class ISOMsgUtils {
 	

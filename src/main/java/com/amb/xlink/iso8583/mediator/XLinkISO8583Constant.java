@@ -40,7 +40,7 @@ public class XLinkISO8583Constant {
 	
 	public static final String REQUEST_FIELD_42= "CF"; //TODO: Verify this.
 	
-	public static final String REQUEST_FIELD_43= "JKT_IDN"; //TODO: Verify this.
+	public static final String REQUEST_FIELD_43= "JAKARTA      ID"; //TODO: Verify this.
 	
 	public static final String REQUEST_FIELD_49 = "360"; //IDR CURR CODE
 	

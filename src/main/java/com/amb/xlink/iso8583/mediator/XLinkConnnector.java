@@ -1,14 +1,21 @@
 package com.amb.xlink.iso8583.mediator;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jpos.iso.ISOException;
+import org.jpos.iso.ISOMsg;
 import org.jpos.iso.ISOPackager;
 import org.jpos.iso.packager.GenericPackager;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import com.amb.xlink.iso8583.jpos.util.NetworkMgtUtil;
 
 // TODO:here we need accomodate the logic such as
 
@@ -57,6 +64,7 @@ public class XLinkConnnector {
 	private static int DEFAULT_TIMEOUT=60000;
 
 	public static XLinkConnnector getInstance() {
+        System.out.println("Connector Instantiated");
 		return connnector;
 	}
 	
@@ -82,10 +90,11 @@ public class XLinkConnnector {
 				.get(mobileConnectionKey);
 
 		if(sessionWrapper != null){
-			log.info("Session Wrapper not null");
+			log.info("Connector: Session Wrapper not null for "+mobileConnectionKey);
 			if(sessionWrapper.getChannel().stopped){
 				//clean it..(a pre-measurement to clean up if connection closed,
 				//but there is a new request triggering..)
+                log.info("Connector: Removing closed seesion for "+mobileConnectionKey);
 				sessionMap.remove(mobileConnectionKey);
 				expiredSessionList.remove(mobileConnectionKey);
 				//To Trigger the new connection for the stale connection, make the sessionWrapper to null
@@ -94,9 +103,10 @@ public class XLinkConnnector {
 		}
 		
 		if (sessionWrapper == null) {
-			log.info("Session wrapper null");
+			log.info("Connector : Session wrapper null");
+			log.info("Connector: Trying to aquire the Mutable Object Lock");
 			synchronized (mutableObj) {
-
+				log.info("Connector: Mutable Object Lock Aquired");
 				sessionWrapper = sessionMap
 						.get(mobileConnectionKey);//double checking...
 
@@ -109,10 +119,11 @@ public class XLinkConnnector {
 					int retrycount = 0;
 					while (!sessionCreated && retrycount != ERROR_RETRY_COUNT) {
 						try {
-							log.info("Starting to initiating XLink connection");
+							log.info("Connector: Starting to initiating XLink connection for "+mobileConnectionKey);
 							this.exchangeKeys(host, port, transactionHandler,
 									sessionWrapper, packager);
 						} catch (XLinkISO8583Exception e) {
+                            log.info("Try fails, Try count "+retrycount);
 							retrycount++;
 							try {
 								Thread.sleep(SUSPEND_DURATION);
@@ -136,12 +147,15 @@ public class XLinkConnnector {
 					// performing the [5]
 					sessionMap.put(mobileConnectionKey, sessionWrapper);
 					log.info("Session map updated");
-				}
+				}else{
+                    log.info("Connector: Session Wrapper exists in second test for "+mobileConnectionKey+"     session id  "+ sessionWrapper.getSessionId());
+                }
 			
 			}
+            log.info("Connector Released object lock");
 
 		}else{
-			System.out.println("##### found session information " + sessionWrapper.getSessionId());
+            log.info("##### found session information " + sessionWrapper.getSessionId());
 		}
 		return sessionWrapper;
 	}
@@ -167,24 +181,27 @@ public class XLinkConnnector {
 			chl = new XLinkChannel(host, Integer.valueOf(port), packager);
 			
 			try {
+                log.info("Connector connecting channel");
 				//chl.setTimeout(DEFAULT_TIMEOUT);
 				chl.connect();
 			} catch (IOException e) {
 				log.error(e);
 				mutableObj.notify();
+				log.error("Releasing Mutable Lock after IOException");
 				throw new XLinkISO8583Exception(
 						"Error while connecting XLink {system may be shutdown} I/O error",
 						e);
 			}catch (Exception e) {
 				log.error(e);
 				mutableObj.notify();
+				log.error("Releasing Mutable Lock after Exception");
 				throw new XLinkISO8583Exception(
 						"Error while connecting XLink {system may be unexpected} I/O error",
 						e);
 			}
 
 			sessionWrapper.setChannel(chl);
-
+			log.info("Channel started listening. Trying Sign On next");
 			transactionHandler.doKeyExchange(sessionWrapper);
 			
 			log.info("Sign On done and proceeding ...");
@@ -229,7 +246,7 @@ public class XLinkConnnector {
 
 		@Override
 		public void run() {
-			System.out.println("Monitor ######" + expiredSessionList.size());
+            log.info("Monitor ######" + expiredSessionList.size());
 			while (true) {
 				// System.out.println("###### monitor"
 				// +expiredSessionList.size());
@@ -244,18 +261,21 @@ public class XLinkConnnector {
 
 	
 		private void checkExpiredSessions() {
+            log.debug("Monitor Thread : Check Session Starts "+expiredSessionList.size());
 			if (expiredSessionList.size() > 0) {
-				System.out.println("###### MONITOR TRIGGERS #######");
 				Iterator<String> listItr = expiredSessionList.iterator();
 				while (listItr.hasNext()) {
 					String expired = listItr.next();
+                    log.debug("Monitor Thread : Removing Session  "+expired);
 					sessionMap.remove(expired);
 					listItr.remove();
-					System.out.println("removed #" + expired + ": sesMap "
+                    log.info("removed #" + expired + ": sesMap "
 							+ sessionMap.size() + ": expired list ->"
 							+ expiredSessionList.size());
 				}
+
 			}
+            log.info("Monitor Thread : Completes");
 		}
 
 	}

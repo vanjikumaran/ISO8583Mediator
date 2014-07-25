@@ -1,6 +1,13 @@
 package com.amb.xlink.iso8583.mediator;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.xml.stream.XMLStreamException;
+
 import junit.framework.TestCase;
+
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
@@ -13,11 +20,6 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
-
-import javax.xml.stream.XMLStreamException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public class XLinkISO8583MediatorTest extends TestCase {
 

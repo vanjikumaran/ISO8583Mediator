@@ -1,7 +1,8 @@
 package com.amb.xlink.iso8583.mediator;
 
-import com.amb.xlink.iso8583.jpos.util.NetworkMgtUtil;
-import com.amb.xlink.iso8583.jpos.util.XLinkMessageHelper;
+import java.io.IOException;
+import java.util.Calendar;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -9,8 +10,8 @@ import org.jpos.iso.ISOException;
 import org.jpos.iso.ISOFilter.VetoException;
 import org.jpos.iso.ISOMsg;
 
-import java.io.IOException;
-import java.util.Calendar;
+import com.amb.xlink.iso8583.jpos.util.NetworkMgtUtil;
+import com.amb.xlink.iso8583.jpos.util.XLinkMessageHelper;
 
 public class XLinkISO8583TransactionHandler {
 
@@ -73,9 +74,9 @@ public class XLinkISO8583TransactionHandler {
 			XLinkISO8583Util.logISOMsg(request);
 			sessionWrapper.send(request);
 			ISOMsg response = sessionWrapper.getChannel().receive();
-			XLinkISO8583Util.logISOMsg(response);
 			log.info("Sign On response received");
 			if (response != null) {
+				XLinkISO8583Util.logISOMsg(response);
 				String signOnCheck = (String) response.getValue(XLinkISO8583Constant.FIELD_RESPONSE_CODE);
 				//TODO: More validations required to check whether the proper response for the request.
 				log.info("Validating SignOn Response.");
@@ -127,6 +128,7 @@ public class XLinkISO8583TransactionHandler {
 		 return	XLinkMessageHelper.handleResponse(sessionWrapper, msgCtx, synCtx,
 					response);
 		}
+		log.info("ISO Response is NULL");
 		return null;
 	}
 
